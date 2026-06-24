@@ -1,9 +1,3 @@
-"""Diagnostic: open ONE LinkedIn content search and dump ground truth.
-
-Run:  python debug_scrape.py
-Uses the same persistent ./li_profile login. Opens a visible window.
-Writes findings to out/debug/.
-"""
 from __future__ import annotations
 import asyncio, os, json, re
 from urllib.parse import quote

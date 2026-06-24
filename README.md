@@ -44,14 +44,25 @@ python linkedin_scraper.py
 
 # once logged in, you can run without a visible window
 python linkedin_scraper.py --keyword-file keywords.txt --headless
+
+# keep only job / hiring posts (drops everything else)
+python linkedin_scraper.py --keyword-file keywords.txt --content-type jobs
 ```
+
+`--content-type` defaults to `all`. Either way every row gets an **Is Job Post**
+(`Yes`/`No`) column, so you can also just export everything and filter in Excel.
+Classification is text-based (LinkedIn has no native job-post search filter):
+a post counts as a job post if it hits a strong hiring signal (e.g. *"we're
+hiring"*, *"apply now"*, *"send your resume"*, `#hiring`, *"job title/description"*)
+or two or more weaker ones (*job*, *vacancy*, *experience:*, *location:*,
+*full-time*, *CTC*, …).
 
 ## Output
 
 `out/posts.xlsx` and `out/posts.csv`, one row per unique post:
 
 Search Keyword · Author Name · Author Headline · Post Text · Author Profile URL ·
-Post Date · Reactions Count · Comments Count · Reposts Count · Scraped At
+Post Date · Is Job Post · Reactions Count · Comments Count · Reposts Count · Scraped At
 
 Duplicates (same post across multiple keywords) are removed automatically,
 keyed on author + post text.

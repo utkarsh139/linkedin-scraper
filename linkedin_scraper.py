@@ -216,6 +216,40 @@ COUNT_JS = r"""
 }
 """
 
+# --- job-post detection -----------------------------------------------------
+# LinkedIn search has no "job post" content filter, so we classify on the text.
+# A post is a job post if it hits one STRONG signal, or two+ MEDIUM signals.
+STRONG_JOB_RE = [re.compile(p, re.I) for p in (
+    r"\b(we(?:'| a)re|now|currently|actively)\s+hiring\b",
+    r"\bis\s+hiring\b",
+    r"\bjob\s+(?:title|description|opening|opportunit)",
+    r"\bopen\s+(?:position|role|vacanc)",
+    r"\b(?:share|send|drop|email|dm)\s+(?:your|me\s+your|us\s+your)?\s*(?:resume|cv|cvs)\b",
+    r"\bapply\s+(?:now|here|at|via|through|by)\b",
+    r"#hiring\b", r"#nowhiring\b", r"#jobopening", r"#wearehiring",
+    r"\bhiring\s+(?:for|alert|now)\b",
+)]
+MEDIUM_JOB_RE = [re.compile(p, re.I) for p in (
+    r"\b(?:looking|searching)\s+for\s+(?:an?\s+)?\w+\s+(?:engineer|developer|scientist|"
+    r"analyst|manager|designer|architect|intern|specialist|lead)\b",
+    r"\bjob\b", r"\bvacanc", r"\bopen\s+role", r"\bopen\s+position", r"\bopenings?\b",
+    r"\bapply\b", r"\brecruit", r"\bcandidate", r"\bapplicant",
+    r"\bexperience\s*[:\-]", r"\blocation\s*[:\-]", r"\bemployment\s+type\b",
+    r"\bnotice\s+period\b", r"\bimmediate\s+joiner", r"\bctc\b", r"\bsalary\b",
+    r"\bfull[\-\s]?time\b", r"\bpart[\-\s]?time\b", r"\bremote\b", r"\bonsite\b",
+    r"\bjoin\s+(?:our|the)\s+team\b", r"\broles?\s+and\s+responsibilit",
+    r"\brequired\s+skills?\b", r"\bqualificat", r"\byears?\s+of\s+experience\b",
+    r"#job", r"#career", r"#vacancy", r"#opentowork", r"#recruit",
+)]
+
+
+def is_job_post(text: str) -> bool:
+    t = text or ""
+    if any(r.search(t) for r in STRONG_JOB_RE):
+        return True
+    return sum(1 for r in MEDIUM_JOB_RE if r.search(t)) >= 2
+
+
 TIME_RE = re.compile(r"^(now|\d+\s*(?:s|m|h|d|w|mo|yr))\b", re.I)
 ACTION_LINES = {"like", "comment", "repost", "send", "save",
                 "follow", "following", "connect", "+ follow"}
@@ -285,6 +319,7 @@ def parse_card(card: dict, keyword: str) -> dict | None:
         "Post Text": post_text,
         "Author Profile URL": card.get("profile", ""),
         "Post Date": post_date or "",
+        "Is Job Post": "Yes" if is_job_post(post_text) else "No",
         "Reactions Count": reactions,
         "Comments Count": comments,
         "Reposts Count": reposts,
@@ -292,7 +327,7 @@ def parse_card(card: dict, keyword: str) -> dict | None:
     }
 
 
-async def extract_dom(page, keyword: str) -> dict:
+async def extract_dom(page, keyword: str, jobs_only: bool = False) -> dict:
     """Returns {dedup_key: record} scraped from the rendered page."""
     try:
         raw = await page.evaluate(DOM_EXTRACT_JS)
@@ -302,6 +337,8 @@ async def extract_dom(page, keyword: str) -> dict:
     for card in raw or []:
         rec = parse_card(card, keyword)
         if not rec:
+            continue
+        if jobs_only and rec["Is Job Post"] != "Yes":
             continue
         out[dedup_key(rec["Post Text"])] = rec
     return out
@@ -338,7 +375,7 @@ async def ensure_login(page):
         await loop.run_in_executor(None, input, " Then press Enter here to continue... ")
 
 
-async def scroll_and_collect(page, keyword: str) -> dict:
+async def scroll_and_collect(page, keyword: str, jobs_only: bool = False) -> dict:
     if not await goto_retry(page, build_search_url(keyword)):
         return {}
     await page.wait_for_timeout(3000)
@@ -368,7 +405,7 @@ async def scroll_and_collect(page, keyword: str) -> dict:
         await page.wait_for_timeout(800)
     except Exception:
         pass
-    return await extract_dom(page, keyword)
+    return await extract_dom(page, keyword, jobs_only)
 
 
 # ---------------------------------------------------------------------------
@@ -380,9 +417,11 @@ async def run(args):
 
     keywords = resolve_keywords(args)
     os.makedirs(args.out, exist_ok=True)
+    jobs_only = args.content_type == "jobs"
 
     print(f"Keywords: {len(keywords)} | profile: {PROFILE_DIR} | "
-          f"headless: {args.headless} | max scrolls: {MAX_SCROLLS}")
+          f"headless: {args.headless} | content: {args.content_type} | "
+          f"max scrolls: {MAX_SCROLLS}")
 
     all_posts: dict[str, dict] = {}     # keyed by post-text hash, deduped across keywords
 
@@ -400,7 +439,7 @@ async def run(args):
         for i, kw in enumerate(keywords, 1):
             t0 = time.time()
             try:
-                found = await scroll_and_collect(page, kw)
+                found = await scroll_and_collect(page, kw, jobs_only)
             except Exception as e:
                 print(f"[{i}/{len(keywords)}] {kw[:34]:<34} ERROR {type(e).__name__}: {e}")
                 continue
@@ -424,7 +463,7 @@ def export(all_posts: dict, out_dir: str):
         print("\nNo posts collected. Nothing to export.")
         return
     cols = ["Search Keyword", "Author Name", "Author Headline", "Post Text",
-            "Author Profile URL", "Post Date", "Reactions Count",
+            "Author Profile URL", "Post Date", "Is Job Post", "Reactions Count",
             "Comments Count", "Reposts Count", "Scraped At"]
     df = pd.DataFrame(list(all_posts.values()), columns=cols)
     df.drop_duplicates(subset=["Author Profile URL", "Post Text"], inplace=True)
@@ -447,6 +486,9 @@ def main():
     ap.add_argument("--out", default=DEFAULT_OUT, help="output directory")
     ap.add_argument("--headless", action="store_true",
                     help="run without a visible window (only after logging in once)")
+    ap.add_argument("--content-type", choices=["all", "jobs"], default="all",
+                    help="'jobs' keeps only hiring/job posts; 'all' keeps everything "
+                         "(the 'Is Job Post' column is filled either way)")
     args = ap.parse_args()
     asyncio.run(run(args))
 
