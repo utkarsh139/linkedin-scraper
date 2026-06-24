@@ -1,0 +1,6 @@
+li_profile/
+out/
+__pycache__/
+*.pyc
+venv/
+.env

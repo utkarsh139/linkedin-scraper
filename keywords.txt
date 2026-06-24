@@ -1,0 +1,101 @@
+# One keyword per line. Lines starting with # are ignored.
+# Run: python linkedin_scraper.py --keyword-file keywords.txt
+
+# Software Engineering
+Software Engineer
+Software Developer
+Full Stack Developer
+Fullstack Developer
+Full Stack Engineer
+Backend Developer
+Backend Engineer
+Frontend Developer
+Frontend Engineer
+Web Developer
+Application Developer
+Python Developer
+Java Developer
+Node.js Developer
+React Developer
+MERN Developer
+SDE
+SDE 1
+SDE 2
+
+# AI / GenAI
+AI Engineer
+AI Developer
+AI Software Engineer
+Generative AI Engineer
+GenAI Engineer
+LLM Engineer
+LLM Developer
+Agentic AI Engineer
+AI Automation Engineer
+AI Product Engineer
+AI Research Engineer
+Applied AI Engineer
+AI Solutions Engineer
+AI Architect
+
+# Machine Learning
+Machine Learning Engineer
+ML Engineer
+Applied Machine Learning Engineer
+Deep Learning Engineer
+Computer Vision Engineer
+NLP Engineer
+MLOps Engineer
+AI ML Engineer
+ML Research Engineer
+
+# Data Science
+Data Scientist
+Senior Data Scientist
+Applied Scientist
+Data Analyst
+Analytics Engineer
+Business Intelligence Engineer
+Data Engineer
+Big Data Engineer
+Data Platform Engineer
+Decision Scientist
+
+# Cloud / Platform
+Platform Engineer
+DevOps Engineer
+Cloud Engineer
+Site Reliability Engineer
+Infrastructure Engineer
+
+# Hiring Intent
+Hiring AI Engineer
+Hiring Machine Learning Engineer
+Hiring Data Scientist
+Hiring Software Engineer
+Hiring Full Stack Developer
+Looking for Software Engineer
+Looking for AI Engineer
+Looking for ML Engineer
+Looking for Data Scientist
+Looking for Full Stack Developer
+We Are Hiring AI Engineer
+We Are Hiring Software Engineer
+We Are Hiring ML Engineer
+We Are Hiring Data Scientist
+Remote Software Engineer
+Remote AI Engineer
+Remote ML Engineer
+Remote Data Scientist
+Entry Level Software Engineer
+Entry Level AI Engineer
+Fresher Software Engineer
+Fresher Developer
+Graduate Software Engineer
+Graduate AI Engineer
+Software Engineer Internship
+Software Developer Internship
+AI Internship
+ML Internship
+Data Science Internship
+Generative AI Internship
